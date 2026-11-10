@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Annuaire des Artisans</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1> Annuaire des Artisans</h1>
+        
+    </header>
+
+    <main>
+        <!-- filtrage -->
+        <section class="filtres">
+            <input type="text" id="recherche-metier" placeholder="Chercher un métier (ex: Plombier)...">
+        </section>
+
+        <!-- Liste des artisans -->
+        <section id="liste-artisans">
+            <div>metier</div>
+            <div>experience</div>
+        </section>
+    </main>
+
+    <!-- laisser un avis -->
+    <div id="modale-avis" class="modale cache">
+        <div class="modale-contenu">
+            <h2>Laisser un avis</h2>
+            <form id="form-avis">
+                <input type="hidden" id="avis-artisan-id">
+                <input type="text" id="avis-auteur" placeholder="Votre nom" required>
+                <select id="avis-note" required>
+                    <option value="5"> (5/5)</option>
+                    <option value="4"> (4/5)</option>
+                    <option value="3"> (3/5)</option>
+                    <option value="2"> (2/5)</option>
+                    <option value="1"> (1/5)</option>
+                </select>
+                <textarea id="avis-commentaire" placeholder="Votre commentaire..."></textarea>
+                <button type="submit">Envoyer</button>
+                <button type="button" onclick="fermerModaleAvis()">Annuler</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
