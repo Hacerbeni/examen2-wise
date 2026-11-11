@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestion - Annuaire</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="hero" style="padding: 30px;">
+        <a href="/" class="lien-admin">← Retour au site</a>
+        <h1> Tableau de bord</h1>
+        <p>Gérez les artisans et modérez les avis.</p>
+    </header>
+
+    <main class="admin-container">
+        <section class="admin-formulaire">
+            <h2>Ajouter un artisan</h2>
+            <form id="form-artisan">
+                <input type="text" id="nom" placeholder="Nom complet" required>
+                <input type="text" id="metier" placeholder="Métier (ex: Plombier)" required>
+                <input type="text" id="quartier" placeholder="Quartier" required>
+                <input type="number" id="experience" placeholder="Années d'expérience" min="0" required>
+                <input type="text" id="telephone" placeholder="Téléphone">
+                <textarea id="description" placeholder="Courte description..."></textarea>
+                <button type="submit">Ajouter l'artisan</button>
+            </form>
+        </section>
+
+        <section class="admin-liste-section">
+            <h2>Artisans et avis</h2>
+            <div id="admin-liste"></div>
+        </section>
+    </main>
+    <script src="admin.js"></script>
+</body>
+</html>

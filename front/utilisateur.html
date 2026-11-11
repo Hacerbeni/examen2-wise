@@ -2,29 +2,36 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Annuaire des Artisans</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <h1> Annuaire des Artisans</h1>
-        
+    <header class="hero">
+        <a href="/admin.html" class="lien-admin">Gestion </a>
+        <div class="hero-content">
+            <h1> Trouvez l'artisan qu'il vous faut</h1>
+            <p>Plombiers, couturières, électriciens... Les meilleurs talents de votre quartier.</p>
+            <div class="search-bar">
+                <input type="text" id="recherche-globale" placeholder="Rechercher un artisan, un métier, un quartier...">
+                <button id="btn-recherche"></button>
+            </div>
+        </div>
     </header>
 
     <main>
-        <!-- filtrage -->
-        <section class="filtres">
-            <input type="text" id="recherche-metier" placeholder="Chercher un métier (ex: Plombier)...">
+        <section class="stats">
+            <div class="stat-card"><h3 id="stat-total">0</h3><p>Artisans</p></div>
+            <div class="stat-card"><h3 id="stat-metiers">0</h3><p>Métiers</p></div>
+            <div class="stat-card"><h3 id="stat-quartiers">0</h3><p>Quartiers</p></div>
         </section>
 
-        <!-- Liste des artisans -->
-        <section id="liste-artisans">
-            <div>metier</div>
-            <div>experience</div>
-        </section>
+        <section class="filtres-metiers" id="filtres-metiers"></section>
+        
+        <section id="liste-artisans" class="grille-artisans"></section>
     </main>
 
-    <!-- laisser un avis -->
+   <!-- laisser un avis -->
     <div id="modale-avis" class="modale cache">
         <div class="modale-contenu">
             <h2>Laisser un avis</h2>
@@ -39,12 +46,13 @@
                     <option value="1"> (1/5)</option>
                 </select>
                 <textarea id="avis-commentaire" placeholder="Votre commentaire..."></textarea>
-                <button type="submit">Envoyer</button>
-                <button type="button" onclick="fermerModaleAvis()">Annuler</button>
+                <div class="modale-boutons">
+                    <button type="submit">Envoyer</button>
+                    <button type="button" onclick="fermerModale()" class="btn-annuler">Annuler</button>
+                </div>
             </form>
         </div>
     </div>
-
     <script src="app.js"></script>
 </body>
 </html>
