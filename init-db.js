@@ -8,7 +8,7 @@ db.exec(`
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nom TEXT NOT NULL,
         metier TEXT NOT NULL,
-        quartier TEXT NOT NULL,
+        ville TEXT NOT NULL,
         experience INTEGER NOT NULL DEFAULT 0,
         telephone TEXT,
         description TEXT
@@ -42,7 +42,7 @@ const artisans = [
     ['Rasmané Ilboudo', 'Plombier', 'Koudougou', 11, '73 45 67 89', 'Rénovation de salles de bain.'],
     ['Awa Sawadogo', 'Menuisière', 'Ouagadougou', 18, '74 56 78 90', 'Agencement de cuisines et placards.']
 ];
-const insertArtisan = db.prepare('INSERT INTO artisans (nom, metier, quartier, experience, telephone, description) VALUES (?, ?, ?, ?, ?, ?)');
+const insertArtisan = db.prepare('INSERT INTO artisans (nom, metier, ville, experience, telephone, description) VALUES (?, ?, ?, ?, ?, ?)');
 artisans.forEach(a => insertArtisan.run(...a));
 
 
