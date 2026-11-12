@@ -15,7 +15,7 @@ async function chargerAdmin() {
         (a) => `
             <div class="admin-avis">
                 <span>${a.auteur} (${a.note}/5) : ${a.commentaire || ""}</span>
-                <button class="btn-suppr" onclick="supprimerAvis(${a.id})"></button>
+                <button class="btn-suppr" onclick="supprimerAvis(${a.id})">Supprimer</button>
             </div>`,
       )
       .join("");
