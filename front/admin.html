@@ -15,16 +15,30 @@
     </header>
 
     <main class="admin-container">
+        <section id="connexion-admin" class="admin-formulaire admin-connexion">
+            <h2>Connexion administrateur</h2>
+            <form id="form-connexion">
+                <input type="text" id="identifiant-admin" placeholder="Identifiant" autocomplete="username" required>
+                <input type="password" id="mot-de-passe-admin" placeholder="Mot de passe" autocomplete="current-password" required>
+                <button type="submit">Se connecter</button>
+                <p id="message-connexion" role="alert"></p>
+            </form>
+        </section>
+
+        <div id="gestion-admin" class="gestion-admin cache">
         <section class="admin-formulaire">
-            <h2>Ajouter un artisan</h2>
+            <h2 id="titre-formulaire">Ajouter un artisan</h2>
+            <p id="message-admin" role="alert"></p>
             <form id="form-artisan">
+                <input type="hidden" id="artisan-id">
                 <input type="text" id="nom" placeholder="Nom complet" required>
                 <input type="text" id="metier" placeholder="Métier (ex: Plombier)" required>
                 <input type="text" id="ville" placeholder="Ville" required>
-                <input type="number" id="experience" placeholder="Années d'expérience" min="0" max="20" required>
+                <input type="number" id="experience" placeholder="Années d'expérience" min="0" required>
                 <input type="text" id="telephone" placeholder="Téléphone">
                 <textarea id="description" placeholder="Courte description..."></textarea>
                 <button type="submit">Ajouter l'artisan</button>
+                <button id="annuler-modification" class="btn-annuler cache" type="button">Annuler</button>
             </form>
         </section>
 
@@ -32,6 +46,7 @@
             <h2>Artisans et avis</h2>
             <div id="admin-liste"></div>
         </section>
+        </div>
     </main>
     <script src="admin.js"></script>
 </body>

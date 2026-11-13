@@ -5,6 +5,16 @@ const btnRecherche = document.getElementById("btn-recherche");
 const containerFiltres = document.getElementById("filtres-metiers");
 let metierActif = "";
 
+function cleNormalisee(valeur) {
+  return valeur
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[-\u2010-\u2015]/g, " ")
+    .replace(/\s+/g, " ");
+}
+
 async function chargerArtisans(q = "", metier = "") {
   let url = `${API}/artisans?`;
   if (q) url += `q=${encodeURIComponent(q)}&`;
@@ -64,10 +74,12 @@ async function initialiserPage() {
   const artisans = await reponse.json();
 
   document.getElementById("stat-total").textContent = artisans.length;
-  const metiers = [...new Set(artisans.map((a) => a.groupe_metier))];
+  const metiers = [
+    ...new Set(artisans.map((a) => a.groupe_metier).filter(Boolean)),
+  ];
   document.getElementById("stat-metiers").textContent = metiers.length;
   document.getElementById("stat-villes").textContent = [
-    ...new Set(artisans.map((a) => a.ville)),
+    ...new Set(artisans.map((a) => cleNormalisee(a.ville))),
   ].length;
 
   containerFiltres.innerHTML = `<button class="pilule active" onclick="filtrerParMetier('', this)">Tous</button>`;
