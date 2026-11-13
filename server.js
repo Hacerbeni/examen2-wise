@@ -11,19 +11,24 @@ app.get("/", (req, res) => {
 
 app.get("/api/artisans", (req, res) => {
   const { q, metier } = req.query;
-  let sql = "SELECT * FROM artisans";
+  let sql = `SELECT *,
+    CASE WHEN normaliser_metier(metier) = 'menuiserie'
+      THEN 'Menuiserie'
+      ELSE metier
+    END AS groupe_metier
+    FROM artisans`;
   const params = [];
   const conditions = [];
 
   if (q) {
     conditions.push(
-      "(lower(nom) LIKE ? OR lower(metier) LIKE ? OR lower(ville) LIKE ?)",
+      "(normaliser_texte(nom) LIKE normaliser_texte(?) OR normaliser_texte(metier) LIKE normaliser_texte(?) OR normaliser_texte(ville) LIKE normaliser_texte(?))",
     );
-    const s = `%${q.toLowerCase()}%`;
+    const s = `%${q}%`;
     params.push(s, s, s);
   }
   if (metier) {
-    conditions.push("lower(metier) = lower(?)");
+    conditions.push("normaliser_metier(metier) = normaliser_metier(?)");
     params.push(metier);
   }
 

@@ -64,7 +64,7 @@ async function initialiserPage() {
   const artisans = await reponse.json();
 
   document.getElementById("stat-total").textContent = artisans.length;
-  const metiers = [...new Set(artisans.map((a) => a.metier))];
+  const metiers = [...new Set(artisans.map((a) => a.groupe_metier))];
   document.getElementById("stat-metiers").textContent = metiers.length;
   document.getElementById("stat-villes").textContent = [
     ...new Set(artisans.map((a) => a.ville)),
