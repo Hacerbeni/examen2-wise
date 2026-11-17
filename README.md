@@ -39,9 +39,12 @@ interface d'administration permet de gérer les artisans et de modérer les avis
   de bord d'administration.
 - **dotenv** charge les paramètres d'administration depuis un fichier `.env`.
 
-Cette architecture utilise une base locale et des fichiers web statiques : elle
-permet de lancer l'application sans service de base de données externe ni
-compilation du frontend.
+La page publique peut aussi fonctionner sans serveur : elle utilise les données
+exemple de `front/data.js` et conserve les avis dans le stockage local du
+navigateur. Ces modifications restent propres au navigateur et ne sont pas
+synchronisées avec SQLite. Lorsque l'API Express est disponible, la page
+continue d'utiliser les données du serveur. L'administration nécessite toujours
+le serveur et son authentification.
 
 ## Organisation du projet
 
@@ -51,6 +54,7 @@ compilation du frontend.
 │   ├── admin.html          # Page du tableau de bord
 │   ├── admin.js            # Connexion et opérations d'administration
 │   ├── app.js              # Recherche, affichage et dépôt des avis
+│   ├── data.js             # Données exemple pour le mode autonome
 │   ├── style.css           # Styles communs
 │   └── utilisateur.html    # Page publique de l'annuaire
 ├── postman/                # Ressources de configuration Postman
@@ -124,6 +128,14 @@ L'application est disponible à l'adresse suivante :
 - Tableau de bord : <http://localhost:9000/admin.html>
 
 Le serveur utilise le port `9000`.
+
+### Ouvrir le frontend sans serveur
+
+Ouvrir `front/utilisateur.html` directement dans un navigateur. La recherche,
+les filtres et le dépôt d'avis utilisent alors les données de démonstration de
+`front/data.js`; les avis ajoutés sont conservés dans le stockage local du
+navigateur. Le tableau de bord d'administration et les données de la base
+SQLite ne sont pas disponibles dans ce mode.
 
 ## Utilisation
 

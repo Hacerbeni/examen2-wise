@@ -1,0 +1,27 @@
+window.ANNUAIRE_DATA = {
+  artisans: [
+    { id: 1, nom: "Moussa Ouédraogo", metier: "Plombier", ville: "Koudougou", experience: 12, telephone: "70 00 00 00", description: "Spécialiste des fuites et installations sanitaires." },
+    { id: 2, nom: "Awa Traoré", metier: "Couturière", ville: "Ouagadougou", experience: 5, telephone: "71 11 11 11", description: "Couture sur mesure, tenues traditionnelles et modernes." },
+    { id: 3, nom: "Salif Kaboré", metier: "Électricien", ville: "Bobo-Dioulasso", experience: 8, telephone: "72 22 22 22", description: "Dépannage électrique, installation de tableaux." },
+    { id: 4, nom: "Fatou Sawadogo", metier: "Menuisière", ville: "Koudougou", experience: 15, telephone: "73 33 33 33", description: "Fabrication de meubles en bois massif." },
+    { id: 5, nom: "Issa Compaoré", metier: "Plombier", ville: "Ouagadougou", experience: 3, telephone: "74 44 44 44", description: "Installation de chauffe-eau et robinetterie." },
+    { id: 6, nom: "Mariam Bâ", metier: "Coiffeuse", ville: "Ouagadougou", experience: 10, telephone: "75 55 55 55", description: "Tresses, tissages et soins capillaires." },
+    { id: 7, nom: "Norbert Zongo", metier: "Électricien", ville: "Bobo-Dioulasso", experience: 20, telephone: "76 66 66 66", description: "Expert en installations solaires." },
+    { id: 8, nom: "Monique Ilboudo", metier: "Couturière", ville: "Koudougou", experience: 7, telephone: "77 77 77 77", description: "Retouches rapides et création de vêtements." },
+    { id: 9, nom: "Camara Laye", metier: "Menuisier", ville: "Ouagadougou", experience: 25, telephone: "78 88 88 88", description: "Ébéniste, restauration de meubles anciens." },
+    { id: 10, nom: "Ousmane Sembène", metier: "Peintre", ville: "Bobo-Dioulasso", experience: 14, telephone: "79 99 99 99", description: "Peinture intérieure, extérieure et décorative." },
+    { id: 11, nom: "Aminata Zongo", metier: "Coiffeuse", ville: "Koudougou", experience: 4, telephone: "70 12 34 56", description: "Spécialiste des coiffures enfant." },
+    { id: 12, nom: "Ibrahim Kaboré", metier: "Peintre", ville: "Ouagadougou", experience: 9, telephone: "71 23 45 67", description: "Application de peintures écologiques." },
+    { id: 13, nom: "Sylvie Ouédraogo", metier: "Couturière", ville: "Bobo-Dioulasso", experience: 6, telephone: "72 34 56 78", description: "Couture rapide et retouches." },
+    { id: 14, nom: "Rasmané Ilboudo", metier: "Plombier", ville: "Koudougou", experience: 11, telephone: "73 45 67 89", description: "Rénovation de salles de bain." },
+    { id: 15, nom: "Awa Sawadogo", metier: "Menuisière", ville: "Ouagadougou", experience: 18, telephone: "74 56 78 90", description: "Agencement de cuisines et placards." },
+  ],
+  avis: [
+    { id: 1, artisan_id: 1, auteur: "Jean", note: 5, commentaire: "Très rapide et efficace !" },
+    { id: 2, artisan_id: 1, auteur: "Paul", note: 4, commentaire: "Bon travail, un peu cher." },
+    { id: 3, artisan_id: 2, auteur: "Marie", note: 5, commentaire: "Superbe robe, merci Awa !" },
+    { id: 4, artisan_id: 3, auteur: "Luc", note: 5, commentaire: "A résolu mon problème en 10 min." },
+    { id: 5, artisan_id: 4, auteur: "Sophie", note: 4, commentaire: "Belle table, livraison un peu lente." },
+    { id: 6, artisan_id: 6, auteur: "Alice", note: 5, commentaire: "Coiffure magnifique pour mon mariage." },
+  ],
+};
