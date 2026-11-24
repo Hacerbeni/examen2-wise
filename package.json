@@ -2,11 +2,12 @@
   "name": "examen2-wise",
   "version": "1.0.0",
   "description": "",
-  "main": "db.js",
+  "main": "backend/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node backend/server.js",
+    "dev": "nodemon backend/server.js",
+    "seed": "node database/seed.js"
   },
   "repository": {
     "type": "git",
@@ -19,9 +20,11 @@
   },
   "homepage": "https://github.com/Hacerbeni/examen2-wise#readme",
   "dependencies": {
-    "better-sqlite3": "^13.0.3",
     "dotenv": "^16.4.7",
     "express": "^5.3.0",
+    "mongoose": "^8.19.1"
+  },
+  "devDependencies": {
     "nodemon": "^3.1.14"
   }
 }

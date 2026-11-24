@@ -39,7 +39,7 @@ async function chargerAdmin() {
         (a) => `
             <div class="admin-avis">
                 <span>${a.auteur} (${a.note}/5) : ${a.commentaire || ""}</span>
-                <button class="btn-suppr" onclick="supprimerAvis(${a.id})">Supprimer</button>
+                <button class="btn-suppr" onclick="supprimerAvis('${a.id}')">Supprimer</button>
             </div>`,
       )
       .join("");
@@ -52,8 +52,8 @@ async function chargerAdmin() {
                     <strong>${artisan.nom}</strong> - ${artisan.metier} (${artisan.ville}, ${artisan.experience} ans)
                 </div>
                 <div class="admin-actions">
-                    <button class="btn-modifier" onclick="modifierArtisan(${artisan.id})">Modifier</button>
-                    <button class="btn-suppr" onclick="supprimerArtisan(${artisan.id})">Supprimer</button>
+                    <button class="btn-modifier" onclick="modifierArtisan('${artisan.id}')">Modifier</button>
+                    <button class="btn-suppr" onclick="supprimerArtisan('${artisan.id}')">Supprimer</button>
                 </div>
             </div>
             <div class="admin-avis-liste">${avisHtml || "<em>Aucun avis.</em>"}</div>`;
@@ -126,7 +126,7 @@ function modifierArtisan(id) {
       return reponse.json();
     })
     .then((artisans) => {
-      const artisan = artisans.find((element) => element.id === id);
+      const artisan = artisans.find((element) => String(element.id) === String(id));
       if (!artisan) throw new Error("Artisan introuvable.");
       document.getElementById("artisan-id").value = artisan.id;
       document.getElementById("nom").value = artisan.nom;

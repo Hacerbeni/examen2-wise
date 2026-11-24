@@ -33,16 +33,16 @@ interface d'administration permet de gérer les artisans et de modérer les avis
 
 - **Node.js** exécute le serveur JavaScript.
 - **Express** sert les fichiers de l'interface et expose l'API HTTP.
-- **SQLite**, via `better-sqlite3`, conserve les artisans et les avis dans un
-  fichier local.
+- **MongoDB**, via **Mongoose**, conserve les artisans et les avis. MongoDB
+  Compass peut servir à consulter la base locale.
 - **HTML, CSS et JavaScript** composent l'interface du visiteur et le tableau
   de bord d'administration.
 - **dotenv** charge les paramètres d'administration depuis un fichier `.env`.
 
 La page publique peut aussi fonctionner sans serveur : elle utilise les données
-exemple de `front/data.js` et conserve les avis dans le stockage local du
+exemple de `frontend/data.js` et conserve les avis dans le stockage local du
 navigateur. Ces modifications restent propres au navigateur et ne sont pas
-synchronisées avec SQLite. Lorsque l'API Express est disponible, la page
+synchronisées avec MongoDB. Lorsque l'API Express est disponible, la page
 continue d'utiliser les données du serveur. L'administration nécessite toujours
 le serveur et son authentification.
 
@@ -50,20 +50,25 @@ le serveur et son authentification.
 
 ```text
 .
-├── front/
+├── frontend/
 │   ├── admin.html          # Page du tableau de bord
 │   ├── admin.js            # Connexion et opérations d'administration
 │   ├── app.js              # Recherche, affichage et dépôt des avis
 │   ├── data.js             # Données exemple pour le mode autonome
 │   ├── style.css           # Styles communs
 │   └── utilisateur.html    # Page publique de l'annuaire
+├── backend/
+│   ├── routes/
+│   │   └── api.js          # Routes de l'API Express
+│   └── server.js           # Serveur HTTP et fichiers frontend
+├── database/
+│   ├── models/             # Modèles Mongoose Artisan et Avis
+│   ├── connect.js          # Connexion MongoDB
+│   └── seed.js             # Données de démonstration non destructives
 ├── postman/                # Ressources de configuration Postman
 ├── .env.example            # Noms des paramètres attendus
-├── annuaire.db             # Base de données SQLite utilisée par l'application
-├── db.js                   # Connexion SQLite et normalisation des recherches
-├── init-db.js              # Création des tables et insertion des données exemple
 ├── package.json            # Dépendances et commandes npm
-└── server.js               # Serveur Express et routes de l'API
+└── package-lock.json        # Dépendances verrouillées
 ```
 
 Le dossier `node_modules/` contient les dépendances installées par npm et n'est
@@ -86,27 +91,30 @@ npm install
 Copy-Item .env.example .env
 ```
 
+Après tout changement des dépendances, `npm install` met aussi
+`package-lock.json` à jour.
+
 Ouvrir ensuite `.env` et renseigner les identifiants de l'administrateur :
 
 ```dotenv
 ADMIN_USERNAME=mon_identifiant
 ADMIN_PASSWORD=mon_mot_de_passe
+MONGODB_URI=mongodb://127.0.0.1:27017/annuaire
 ```
 
-L'authentification de l'administration n'est pas disponible tant que ces deux
-valeurs ne sont pas renseignées.
+L'authentification de l'administration n'est pas disponible tant que les deux
+premières valeurs ne sont pas renseignées. MongoDB doit être démarré localement
+ou l'URI doit désigner une instance accessible. La même URI peut être utilisée
+dans MongoDB Compass.
 
-### Initialiser la base de données
+### Initialiser les données de démonstration
 
-Pour créer les tables et insérer les données de démonstration :
+La commande ajoute 15 artisans et 6 avis uniquement si les collections sont
+vides; elle refuse d'écraser des données existantes :
 
 ```powershell
-node init-db.js
+npm run seed
 ```
-
-Cette commande **supprime puis recrée** les tables `avis` et `artisans`, puis
-insère 15 artisans et 6 avis exemples. Elle réinitialise donc les données
-présentes dans ces tables.
 
 ### Démarrer le serveur
 
@@ -114,6 +122,12 @@ Mode développement, avec redémarrage automatique :
 
 ```powershell
 npm run dev
+```
+
+Le lancement direct avec Nodemon reste disponible :
+
+```powershell
+nodemon server.js
 ```
 
 Mode normal :
@@ -131,11 +145,11 @@ Le serveur utilise le port `9000`.
 
 ### Ouvrir le frontend sans serveur
 
-Ouvrir `front/utilisateur.html` directement dans un navigateur. La recherche,
+Ouvrir `frontend/utilisateur.html` directement dans un navigateur. La recherche,
 les filtres et le dépôt d'avis utilisent alors les données de démonstration de
-`front/data.js`; les avis ajoutés sont conservés dans le stockage local du
+`frontend/data.js`; les avis ajoutés sont conservés dans le stockage local du
 navigateur. Le tableau de bord d'administration et les données de la base
-SQLite ne sont pas disponibles dans ce mode.
+MongoDB ne sont pas disponibles dans ce mode.
 
 ## Utilisation
 
@@ -146,8 +160,8 @@ avis. Le bouton **Donner un avis** ouvre le formulaire de dépôt.
 La page **Gestion** ouvre le tableau de bord d'administration. Après connexion
 avec `ADMIN_USERNAME` et `ADMIN_PASSWORD`, l'administrateur peut ajouter ou
 modifier une fiche, supprimer un artisan, consulter ses avis et supprimer un
-avis. La suppression d'un artisan supprime également ses avis associés grâce à
-la relation entre les tables.
+avis. La suppression d'un artisan supprime également explicitement ses avis
+associés dans MongoDB.
 
 ## API HTTP
 
@@ -183,7 +197,7 @@ Exemple de corps JSON pour déposer un avis :
 
 ```json
 {
-  "artisan_id": 1,
+  "artisan_id": "identifiant MongoDB de l'artisan",
   "auteur": "Jean",
   "note": 5,
   "commentaire": "Très bon service."
@@ -196,7 +210,7 @@ Exemple de corps JSON pour déposer un avis :
 
 | Champ | Type | Description |
 | --- | --- | --- |
-| `id` | Entier | Identifiant unique généré automatiquement. |
+| `_id` | ObjectId | Identifiant MongoDB unique. Renvoyé par l'API sous la clé `id`. |
 | `nom` | Texte | Nom de l'artisan, obligatoire. |
 | `metier` | Texte | Métier de l'artisan, obligatoire. |
 | `ville` | Texte | Ville de l'artisan, obligatoire. |
@@ -208,30 +222,28 @@ Exemple de corps JSON pour déposer un avis :
 
 | Champ | Type | Description |
 | --- | --- | --- |
-| `id` | Entier | Identifiant unique généré automatiquement. |
-| `artisan_id` | Entier | Identifiant de l'artisan auquel l'avis se rapporte. |
+| `_id` | ObjectId | Identifiant MongoDB unique. Renvoyé par l'API sous la clé `id`. |
+| `artisan_id` | ObjectId | Référence vers l'artisan auquel l'avis se rapporte. |
 | `auteur` | Texte | Nom de l'auteur, obligatoire. |
 | `note` | Entier | Note comprise entre 1 et 5. |
 | `commentaire` | Texte | Commentaire facultatif. |
 
-Un artisan peut avoir plusieurs avis. La clé étrangère d'`avis.artisan_id`
-référence `artisans.id` et la suppression d'un artisan entraîne la suppression
-de ses avis.
+Un artisan peut avoir plusieurs avis. `avis.artisan_id` référence
+`artisans._id`; le serveur supprime les avis associés lors de la suppression
+d'un artisan.
 
 ## Recherche et normalisation des métiers
 
-La base de données expose les fonctions SQLite `normaliser_texte` et
-`normaliser_metier`, enregistrées dans `db.js`. La première facilite les
-recherches en ignorant notamment les accents et la casse. La seconde associe
-certaines formes de métiers à une catégorie commune, par exemple « plombier »
-et « plomberie ». Les catégories prédéfinies comprennent la menuiserie, la
-plomberie, l'électricité, la couture et la coiffure. Les autres métiers sont
-également proposés dans les filtres à partir des données présentes.
+La recherche normalise le texte en ignorant notamment les accents et la casse.
+Certaines formes de métiers sont associées à une catégorie commune, par exemple
+« plombier » et « plomberie ». Les catégories prédéfinies comprennent la
+menuiserie, la plomberie, l'électricité, la couture et la coiffure. Les autres
+métiers sont également proposés dans les filtres à partir des données présentes.
 
 ## Données locales
 
-L'application ouvre le fichier `annuaire.db` à la racine du projet. Les
-changements effectués depuis l'interface sont enregistrés dans cette base.
-Conserver ce fichier permet de conserver les données entre les redémarrages du
-serveur. Exécuter `node init-db.js` recrée les tables et remplace les données
-par le jeu de démonstration.
+L'application se connecte à la base MongoDB indiquée par `MONGODB_URI`. Les
+changements effectués depuis l'interface sont conservés dans MongoDB et
+consultables avec Compass. Les requêtes d'API peuvent être envoyées depuis
+Postman en local à `http://localhost:9000`; le port peut être modifié avec
+`PORT`.

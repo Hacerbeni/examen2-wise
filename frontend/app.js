@@ -91,7 +91,7 @@ function obtenirArtisansLocaux(q = "", metier = "") {
       return {
         ...artisan,
         groupe_metier: groupeMetier,
-        avis: avis.filter((element) => element.artisan_id === artisan.id),
+        avis: avis.filter((element) => String(element.artisan_id) === String(artisan.id)),
       };
     })
     .filter((artisan) => {
@@ -134,7 +134,7 @@ async function obtenirArtisans(q = "", metier = "") {
     );
   } catch {
     activerModeLocal(
-      
+      "Serveur indisponible : affichage des données de démonstration locales.",
     );
     return obtenirArtisansLocaux(q, metier);
   }
@@ -174,7 +174,7 @@ async function chargerArtisans(q = "", metier = "") {
             <div class="carte-rating"><span>${etoiles}</span><span class="nb-avis">${artisan.avis.length} avis</span></div>
             <div class="carte-footer">
                 <span class="tel">${artisan.telephone || "N/A"}</span>
-                <button class="btn-avis" onclick="ouvrirModale(${artisan.id})">Donner un avis</button>
+                <button class="btn-avis" onclick="ouvrirModale('${artisan.id}')">Donner un avis</button>
             </div>`;
       containerArtisans.appendChild(carte);
     });
@@ -237,9 +237,20 @@ function fermerModale() {
 }
 
 function ajouterAvisLocal(avis) {
+  const artisanId = Number(avis.artisan_id);
+  if (
+    !Number.isSafeInteger(artisanId) ||
+    String(artisanId) !== String(avis.artisan_id) ||
+    !window.ANNUAIRE_DATA.artisans.some((artisan) => artisan.id === artisanId)
+  ) {
+    throw new Error(
+      "Cet artisan n'est pas disponible dans les données locales de démonstration.",
+    );
+  }
   const avisEnregistres = [...lireAvisLocaux()];
   const nouvelAvis = {
     ...avis,
+    artisan_id: artisanId,
     id:
       avisEnregistres.reduce(
         (maximum, element) => Math.max(maximum, element.id),
@@ -254,7 +265,7 @@ function ajouterAvisLocal(avis) {
 document.getElementById("form-avis").onsubmit = async (e) => {
   e.preventDefault();
   const avis = {
-    artisan_id: Number(document.getElementById("avis-artisan-id").value),
+    artisan_id: document.getElementById("avis-artisan-id").value,
     auteur: document.getElementById("avis-auteur").value.trim(),
     note: Number(document.getElementById("avis-note").value),
     commentaire: document.getElementById("avis-commentaire").value.trim(),
