@@ -1,6 +1,8 @@
 const express = require("express");
 const { timingSafeEqual } = require("node:crypto");
 const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const Artisan = require("../../database/models/Artisan");
 const Avis = require("../../database/models/Avis");
 
@@ -61,30 +63,61 @@ function comparer(fourni, attendu) {
   );
 }
 
-function verifierAdmin(req, res, next) {
+function variablesConfigurationAdminInvalides() {
   const nomAdmin = process.env.ADMIN_USERNAME;
-  const motDePasseAdmin = process.env.ADMIN_PASSWORD;
-  if (!nomAdmin || !motDePasseAdmin) {
-    return res.status(503).json({
-      erreur: "L'authentification administrateur n'est pas configurée.",
-    });
+  const hashMotDePasseAdmin = process.env.ADMIN_PASSWORD_HASH;
+  const secretJWT = process.env.JWT_SECRET;
+  const variablesInvalides = [];
+  if (!nomAdmin || !nomAdmin.trim()) variablesInvalides.push("ADMIN_USERNAME");
+  if (
+    !/^\$2[aby]\$(0[4-9]|1[0-6])\$[./A-Za-z0-9]{53}$/.test(
+      hashMotDePasseAdmin || "",
+    )
+  ) {
+    variablesInvalides.push("ADMIN_PASSWORD_HASH");
   }
+  if (Buffer.byteLength(secretJWT || "") < 32) {
+    variablesInvalides.push("JWT_SECRET");
+  }
+  return variablesInvalides;
+}
+
+function configurationAdmin() {
+  if (variablesConfigurationAdminInvalides().length) return null;
+  const nomAdmin = process.env.ADMIN_USERNAME;
+  const hashMotDePasseAdmin = process.env.ADMIN_PASSWORD_HASH;
+  const secretJWT = process.env.JWT_SECRET;
+  return { nomAdmin, hashMotDePasseAdmin, secretJWT };
+}
+
+function repondreConfigurationAdminInvalide(res) {
+  const variables = variablesConfigurationAdminInvalides().join(", ");
+  return res.status(503).json({
+    erreur: `Configuration administrateur invalide : vérifiez ${variables}.`,
+  });
+}
+
+function verifierAdmin(req, res, next) {
+  const configuration = configurationAdmin();
+  if (!configuration) return repondreConfigurationAdminInvalide(res);
 
   const autorisation = req.get("authorization") || "";
-  const correspondance = autorisation.match(/^Basic ([A-Za-z0-9+/=]+)$/);
+  const correspondance = autorisation.match(/^Bearer ([^\s]+)$/);
   if (!correspondance) {
     return res.status(401).json({ erreur: "Authentification requise." });
   }
 
-  const identifiants = Buffer.from(correspondance[1], "base64").toString("utf8");
-  const separateur = identifiants.indexOf(":");
-  const nomFourni = separateur < 0 ? "" : identifiants.slice(0, separateur);
-  const motDePasseFourni =
-    separateur < 0 ? "" : identifiants.slice(separateur + 1);
-  const nomValide = comparer(nomFourni, nomAdmin);
-  const motDePasseValide = comparer(motDePasseFourni, motDePasseAdmin);
-  if (!nomValide || !motDePasseValide) {
-    return res.status(401).json({ erreur: "Identifiants invalides." });
+  try {
+    jwt.verify(correspondance[1], configuration.secretJWT, {
+      algorithms: ["HS256"],
+      issuer: "annuaire-artisans",
+      audience: "annuaire-admin",
+    });
+  } catch (error) {
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({ erreur: "Jeton invalide ou expiré." });
+    }
+    return next(error);
   }
   next();
 }
@@ -156,12 +189,48 @@ router.get("/artisans/:id/avis", async (req, res) => {
   );
 });
 
+router.post("/admin/session", async (req, res) => {
+  const configuration = configurationAdmin();
+  if (!configuration) return repondreConfigurationAdminInvalide(res);
+
+  const { nom, motDePasse } = req.body || {};
+  if (
+    typeof nom !== "string" ||
+    typeof motDePasse !== "string" ||
+    Buffer.byteLength(motDePasse) > 72
+  ) {
+    return res.status(400).json({ erreur: "Identifiant et mot de passe requis." });
+  }
+
+  const nomValide = comparer(nom, configuration.nomAdmin);
+  const motDePasseValide = await bcrypt.compare(
+    motDePasse,
+    configuration.hashMotDePasseAdmin,
+  );
+  if (!nomValide || !motDePasseValide) {
+    return res.status(401).json({ erreur: "Identifiants invalides." });
+  }
+
+  const token = jwt.sign(
+    {},
+    configuration.secretJWT,
+    {
+      algorithm: "HS256",
+      expiresIn: "30m",
+      issuer: "annuaire-artisans",
+      audience: "annuaire-admin",
+      subject: configuration.nomAdmin,
+    },
+  );
+  res.json({ token, expiresIn: 1800 });
+});
+
 router.get("/admin/session", verifierAdmin, (req, res) => {
   res.json({ authentifie: true });
 });
 
 router.post("/avis", async (req, res) => {
-  const { artisan_id, auteur, note, commentaire } = req.body;
+  const { artisan_id, auteur, note, commentaire } = req.body || {};
   if (!artisan_id || !auteur || note === undefined || note === null) {
     return res
       .status(400)
@@ -183,7 +252,8 @@ router.post("/avis", async (req, res) => {
 });
 
 router.post("/artisans", verifierAdmin, async (req, res) => {
-  const { nom, metier, ville, experience, telephone, description } = req.body;
+  const { nom, metier, ville, experience, telephone, description } =
+    req.body || {};
   if (!nom || !metier || !ville) {
     return res
       .status(400)
@@ -202,7 +272,8 @@ router.post("/artisans", verifierAdmin, async (req, res) => {
 });
 
 router.put("/artisans/:id", verifierAdmin, async (req, res) => {
-  const { nom, metier, ville, experience, telephone, description } = req.body;
+  const { nom, metier, ville, experience, telephone, description } =
+    req.body || {};
   if (!nom || !metier || !ville) {
     return res
       .status(400)

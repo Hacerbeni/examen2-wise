@@ -38,6 +38,8 @@ interface d'administration permet de gérer les artisans et de modérer les avis
 - **HTML, CSS et JavaScript** composent l'interface du visiteur et le tableau
   de bord d'administration.
 - **dotenv** charge les paramètres d'administration depuis un fichier `.env`.
+- **bcrypt** hache le mot de passe administrateur et **jsonwebtoken** fournit
+  des jetons de session à durée limitée.
 
 La page publique peut aussi fonctionner sans serveur : elle utilise les données
 exemple de `frontend/data.js` et conserve les avis dans le stockage local du
@@ -94,18 +96,36 @@ Copy-Item .env.example .env
 Après tout changement des dépendances, `npm install` met aussi
 `package-lock.json` à jour.
 
-Ouvrir ensuite `.env` et renseigner les identifiants de l'administrateur :
+Ouvrir ensuite `.env`. Le mot de passe est stocké sous forme de hash bcrypt
+(jamais en clair) et le secret JWT doit rester confidentiel. Générer le hash
+depuis PowerShell avec la commande suivante, puis copier le résultat dans
+`ADMIN_PASSWORD_HASH` :
+
+```powershell
+node -e "require('bcrypt').hash(process.argv[1], 12).then(console.log)" "mon_mot_de_passe"
+```
+
+Générer le secret JWT avec une valeur aléatoire d'au moins 32 octets :
+
+```powershell
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
+
+Configurer ensuite `.env` :
 
 ```dotenv
 ADMIN_USERNAME=mon_identifiant
-ADMIN_PASSWORD=mon_mot_de_passe
+ADMIN_PASSWORD_HASH=hash_bcrypt_genere
+JWT_SECRET=secret_aleatoire_genere
 MONGODB_URI=mongodb://127.0.0.1:27017/annuaire
 ```
 
-L'authentification de l'administration n'est pas disponible tant que les deux
-premières valeurs ne sont pas renseignées. MongoDB doit être démarré localement
-ou l'URI doit désigner une instance accessible. La même URI peut être utilisée
-dans MongoDB Compass.
+L'authentification administrateur reste désactivée si l'identifiant, le hash
+bcrypt ou le secret JWT manque. MongoDB doit être démarré localement ou l'URI
+doit désigner une instance accessible. La même URI peut être utilisée dans
+MongoDB Compass.
+Si l'API signale une configuration invalide, elle indique les noms des
+variables à vérifier sans révéler leurs valeurs.
 
 ### Initialiser les données de démonstration
 
@@ -158,23 +178,28 @@ parmi les filtres. Chaque fiche présente les informations de l'artisan et ses
 avis. Le bouton **Donner un avis** ouvre le formulaire de dépôt.
 
 La page **Gestion** ouvre le tableau de bord d'administration. Après connexion
-avec `ADMIN_USERNAME` et `ADMIN_PASSWORD`, l'administrateur peut ajouter ou
+avec `ADMIN_USERNAME` et le mot de passe correspondant à `ADMIN_PASSWORD_HASH`,
+l'administrateur peut ajouter ou
 modifier une fiche, supprimer un artisan, consulter ses avis et supprimer un
 avis. La suppression d'un artisan supprime également explicitement ses avis
 associés dans MongoDB.
 
 ## API HTTP
 
-Toutes les routes de l'API sont préfixées par `/api`. Les routes
-d'administration nécessitent l'en-tête HTTP Basic Authentication utilisant les
-identifiants définis dans `.env`.
+Toutes les routes de l'API sont préfixées par `/api`. La connexion
+administrateur se fait en envoyant `nom` et `motDePasse` à
+`POST /api/admin/session`. Le serveur compare le mot de passe au hash bcrypt et
+renvoie un jeton JWT valable 30 minutes. Les routes d'administration exigent
+ensuite `Authorization: Bearer <jeton>`. Le navigateur conserve ce jeton
+uniquement en mémoire et demande un nouveau login après rechargement de page.
 
 | Méthode | Route | Accès | Description |
 | --- | --- | --- | --- |
 | `GET` | `/api/artisans` | Public | Liste les artisans. Accepte les paramètres facultatifs `q` (recherche textuelle) et `metier` (filtre par métier). |
 | `GET` | `/api/artisans/:id/avis` | Public | Renvoie les avis associés à un artisan. |
 | `POST` | `/api/avis` | Public | Ajoute un avis. Le corps JSON attend `artisan_id`, `auteur`, `note` et éventuellement `commentaire`. |
-| `GET` | `/api/admin/session` | Administration | Vérifie les identifiants et renvoie l'état d'authentification. |
+| `POST` | `/api/admin/session` | Public | Authentifie l'administrateur. Corps JSON : `nom`, `motDePasse`; renvoie un jeton JWT. |
+| `GET` | `/api/admin/session` | Administration | Vérifie le jeton et renvoie l'état d'authentification. |
 | `POST` | `/api/artisans` | Administration | Crée un artisan. |
 | `PUT` | `/api/artisans/:id` | Administration | Modifie un artisan. |
 | `DELETE` | `/api/artisans/:id` | Administration | Supprime un artisan et ses avis associés. |

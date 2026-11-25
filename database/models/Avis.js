@@ -8,7 +8,7 @@ const avisSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
-    auteur: { type: String, required: true, trim: true },
+    auteur: { type: String, required: true, trim: true, maxlength: 100 },
     note: {
       type: Number,
       required: true,
@@ -16,7 +16,7 @@ const avisSchema = new mongoose.Schema(
       max: 5,
       validate: Number.isInteger,
     },
-    commentaire: { type: String, default: null },
+    commentaire: { type: String, trim: true, maxlength: 2000, default: null },
     migrationSource: { type: String, select: false },
   },
   { versionKey: false },

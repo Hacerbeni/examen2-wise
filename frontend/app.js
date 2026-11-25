@@ -42,6 +42,16 @@ function metierNormalise(valeur) {
   return variantesMetier.get(metier) || metier;
 }
 
+function echapperHtml(valeur) {
+  return String(valeur ?? "").replace(/[&<>"']/g, (caractere) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[caractere]);
+}
+
 function activerModeLocal(message) {
   modeDonnees = "local";
   document.querySelector(".lien-admin").classList.add("cache");
@@ -166,16 +176,19 @@ async function chargerArtisans(q = "", metier = "") {
       carte.className = "carte-artisan";
       carte.innerHTML = `
             <div class="carte-header">
-                <div class="avatar">${artisan.nom.charAt(0)}</div>
-                <div><h3>${artisan.nom}</h3><span class="metier">${artisan.metier}</span></div>
+                <div class="avatar">${echapperHtml(artisan.nom.charAt(0))}</div>
+                <div><h3>${echapperHtml(artisan.nom)}</h3><span class="metier">${echapperHtml(artisan.metier)}</span></div>
             </div>
-            <p class="description">${artisan.description || "Aucune description."}</p>
-            <div class="carte-infos"><span>${artisan.ville}</span><span>${artisan.experience} ans</span></div>
+            <p class="description">${echapperHtml(artisan.description || "Aucune description.")}</p>
+            <div class="carte-infos"><span>${echapperHtml(artisan.ville)}</span><span>${echapperHtml(artisan.experience)} ans</span></div>
             <div class="carte-rating"><span>${etoiles}</span><span class="nb-avis">${artisan.avis.length} avis</span></div>
             <div class="carte-footer">
-                <span class="tel">${artisan.telephone || "N/A"}</span>
-                <button class="btn-avis" onclick="ouvrirModale('${artisan.id}')">Donner un avis</button>
+                <span class="tel">${echapperHtml(artisan.telephone || "N/A")}</span>
+                <button class="btn-avis">Donner un avis</button>
             </div>`;
+      carte
+        .querySelector(".btn-avis")
+        .addEventListener("click", () => ouvrirModale(artisan.id));
       containerArtisans.appendChild(carte);
     });
   } catch (erreur) {
