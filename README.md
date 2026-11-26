@@ -35,6 +35,8 @@ interface d'administration permet de gérer les artisans et de modérer les avis
 - **Express** sert les fichiers de l'interface et expose l'API HTTP.
 - **MongoDB**, via **Mongoose**, conserve les artisans et les avis. MongoDB
   Compass peut servir à consulter la base locale.
+- **Zod** valide et normalise les données reçues par l'API avant leur
+  enregistrement dans MongoDB.
 - **HTML, CSS et JavaScript** composent l'interface du visiteur et le tableau
   de bord d'administration.
 - **dotenv** charge les paramètres d'administration depuis un fichier `.env`.
@@ -226,6 +228,33 @@ Exemple de corps JSON pour déposer un avis :
   "auteur": "Jean",
   "note": 5,
   "commentaire": "Très bon service."
+}
+```
+
+### Validation des données avec Zod
+
+Les corps des requêtes de connexion administrateur, de création et de
+modification d'artisan, ainsi que de dépôt d'avis, sont validés côté serveur
+avec Zod avant d'être transmis à Mongoose. Mongoose conserve ses propres
+validations comme protection complémentaire au niveau du modèle.
+
+- Un artisan doit avoir un nom, un métier et une ville non vides. L'expérience
+  est un entier positif ou nul (0 par défaut); les champs téléphone et
+  description sont facultatifs.
+- Un avis doit référencer un identifiant MongoDB valide, avoir un auteur non
+  vide et une note entière de 1 à 5. Le commentaire est facultatif.
+- Une requête invalide reçoit le statut HTTP `400` et un objet JSON avec une
+  erreur générale et les détails par champ, par exemple :
+
+```json
+{
+  "erreur": "Données invalides.",
+  "details": [
+    {
+      "champ": "note",
+      "message": "La note maximale est 5."
+    }
+  ]
 }
 ```
 

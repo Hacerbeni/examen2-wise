@@ -3,10 +3,111 @@ const { timingSafeEqual } = require("node:crypto");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { z } = require("zod");
 const Artisan = require("../../database/models/Artisan");
 const Avis = require("../../database/models/Avis");
 
 const router = express.Router();
+
+const artisanSchema = z.object({
+  nom: z
+    .string({ error: "Le nom doit être une chaîne de caractères." })
+    .trim()
+    .min(1, { error: "Le nom est obligatoire." })
+    .max(100, { error: "Le nom ne peut pas dépasser 100 caractères." }),
+  metier: z
+    .string({ error: "Le métier doit être une chaîne de caractères." })
+    .trim()
+    .min(1, { error: "Le métier est obligatoire." })
+    .max(80, { error: "Le métier ne peut pas dépasser 80 caractères." }),
+  ville: z
+    .string({ error: "La ville doit être une chaîne de caractères." })
+    .trim()
+    .min(1, { error: "La ville est obligatoire." })
+    .max(100, { error: "La ville ne peut pas dépasser 100 caractères." }),
+  experience: z.preprocess(
+    (value) => (value === "" || value == null ? 0 : value),
+    z.coerce
+      .number({ error: "L'expérience doit être un nombre." })
+      .int({ error: "L'expérience doit être un nombre entier." })
+      .min(0, { error: "L'expérience ne peut pas être négative." }),
+  ),
+  telephone: z
+    .string({ error: "Le téléphone doit être une chaîne de caractères." })
+    .trim()
+    .max(30, { error: "Le téléphone ne peut pas dépasser 30 caractères." })
+    .nullable()
+    .optional()
+    .transform((value) => value || null),
+  description: z
+    .string({ error: "La description doit être une chaîne de caractères." })
+    .trim()
+    .max(1000, {
+      error: "La description ne peut pas dépasser 1000 caractères.",
+    })
+    .nullable()
+    .optional()
+    .transform((value) => value || null),
+});
+
+const avisSchema = z.object({
+  artisan_id: z
+    .string({ error: "L'identifiant de l'artisan doit être une chaîne." })
+    .refine(mongoose.isValidObjectId, {
+      message: "Identifiant d'artisan invalide.",
+    }),
+  auteur: z
+    .string({ error: "L'auteur doit être une chaîne de caractères." })
+    .trim()
+    .min(1, { error: "Le nom de l'auteur est obligatoire." })
+    .max(100, {
+      error: "Le nom de l'auteur ne peut pas dépasser 100 caractères.",
+    }),
+  note: z
+    .number({ error: "La note doit être un nombre." })
+    .int({ error: "La note doit être un nombre entier." })
+    .min(1, { error: "La note minimale est 1." })
+    .max(5, { error: "La note maximale est 5." }),
+  commentaire: z
+    .string({ error: "Le commentaire doit être une chaîne de caractères." })
+    .trim()
+    .max(2000, {
+      error: "Le commentaire ne peut pas dépasser 2000 caractères.",
+    })
+    .nullable()
+    .optional()
+    .transform((value) => value || null),
+});
+
+const sessionAdminSchema = z.object({
+  nom: z.string({ error: "L'identifiant doit être une chaîne." }),
+  motDePasse: z
+    .string({ error: "Le mot de passe doit être une chaîne." })
+    .refine((value) => Buffer.byteLength(value) <= 72, {
+      message: "Identifiant et mot de passe requis.",
+    }),
+});
+
+function formaterErreurValidation(error) {
+  return {
+    erreur: "Données invalides.",
+    details: error.issues.map((issue) => ({
+      champ: issue.path.join("."),
+      message: issue.message,
+    })),
+  };
+}
+
+function validerCorps(schema) {
+  return (req, res, next) => {
+    const resultat = schema.safeParse(req.body);
+    if (!resultat.success) {
+      return res.status(400).json(formaterErreurValidation(resultat.error));
+    }
+    req.body = resultat.data;
+    next();
+  };
+}
 
 const variantesMetier = new Map([
   ["menuisier", "menuiserie"],
@@ -193,14 +294,11 @@ router.post("/admin/session", async (req, res) => {
   const configuration = configurationAdmin();
   if (!configuration) return repondreConfigurationAdminInvalide(res);
 
-  const { nom, motDePasse } = req.body || {};
-  if (
-    typeof nom !== "string" ||
-    typeof motDePasse !== "string" ||
-    Buffer.byteLength(motDePasse) > 72
-  ) {
-    return res.status(400).json({ erreur: "Identifiant et mot de passe requis." });
+  const resultat = sessionAdminSchema.safeParse(req.body);
+  if (!resultat.success) {
+    return res.status(400).json(formaterErreurValidation(resultat.error));
   }
+  const { nom, motDePasse } = resultat.data;
 
   const nomValide = comparer(nom, configuration.nomAdmin);
   const motDePasseValide = await bcrypt.compare(
@@ -229,16 +327,8 @@ router.get("/admin/session", verifierAdmin, (req, res) => {
   res.json({ authentifie: true });
 });
 
-router.post("/avis", async (req, res) => {
-  const { artisan_id, auteur, note, commentaire } = req.body || {};
-  if (!artisan_id || !auteur || note === undefined || note === null) {
-    return res
-      .status(400)
-      .json({ erreur: "Artisan, auteur et note sont obligatoires." });
-  }
-  if (!estIdValide(artisan_id)) {
-    return res.status(400).json({ erreur: "Identifiant d'artisan invalide." });
-  }
+router.post("/avis", validerCorps(avisSchema), async (req, res) => {
+  const { artisan_id, auteur, note, commentaire } = req.body;
   if (!(await Artisan.exists({ _id: artisan_id }))) {
     return res.status(404).json({ erreur: "Artisan introuvable." });
   }
@@ -251,53 +341,35 @@ router.post("/avis", async (req, res) => {
   res.status(201).json({ message: "Avis ajouté avec succès" });
 });
 
-router.post("/artisans", verifierAdmin, async (req, res) => {
-  const { nom, metier, ville, experience, telephone, description } =
-    req.body || {};
-  if (!nom || !metier || !ville) {
-    return res
-      .status(400)
-      .json({ erreur: "Nom, métier et ville sont obligatoires." });
-  }
+router.post(
+  "/artisans",
+  verifierAdmin,
+  validerCorps(artisanSchema),
+  async (req, res) => {
+    const artisan = await Artisan.create(req.body);
+    res
+      .status(201)
+      .json(serialiserArtisan(artisan, normaliserMetier(artisan.metier)));
+  },
+);
 
-  const artisan = await Artisan.create({
-    nom,
-    metier,
-    ville,
-    experience: experience || 0,
-    telephone: telephone || null,
-    description: description || null,
-  });
-  res.status(201).json(serialiserArtisan(artisan, normaliserMetier(metier)));
-});
+router.put(
+  "/artisans/:id",
+  verifierAdmin,
+  validerCorps(artisanSchema),
+  async (req, res) => {
+    if (!estIdValide(req.params.id)) {
+      return res.status(404).json({ erreur: "Artisan introuvable" });
+    }
 
-router.put("/artisans/:id", verifierAdmin, async (req, res) => {
-  const { nom, metier, ville, experience, telephone, description } =
-    req.body || {};
-  if (!nom || !metier || !ville) {
-    return res
-      .status(400)
-      .json({ erreur: "Nom, métier et ville sont obligatoires." });
-  }
-  if (!estIdValide(req.params.id)) {
-    return res.status(404).json({ erreur: "Artisan introuvable" });
-  }
-
-  const artisan = await Artisan.findByIdAndUpdate(
-    req.params.id,
-    {
-      nom,
-      metier,
-      ville,
-      experience: experience || 0,
-      telephone: telephone || null,
-      description: description || null,
-    },
-    { new: true, runValidators: true },
-  );
-  if (!artisan) return res.status(404).json({ erreur: "Artisan introuvable" });
-  res.json({ message: "Artisan modifié" });
-});
+    const artisan = await Artisan.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+    if (!artisan) return res.status(404).json({ erreur: "Artisan introuvable" });
+    res.json({ message: "Artisan modifié" });
+  },
+);
 
 router.delete("/artisans/:id", verifierAdmin, async (req, res) => {
   if (!estIdValide(req.params.id)) {
